@@ -1,82 +1,135 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:invest_ia/widgets/news_article_card.dart';
+import 'package:invest_ia/providers/news_provider.dart';
+import 'package:invest_ia/models/news_article.dart';
 
-class NewsScreen extends StatelessWidget {
-  final List<Map<String, String>> newsArticles = [
-    {
-      'title': 'Stock Market Updates',
-      'description': 'The stock market saw a significant rise today as major indices...',
-      'date': '2025-04-28',
-    },
-    {
-      'title': 'GDP Growth Rate Expected to Slow',
-      'description': 'The government has announced that GDP growth will slow in the upcoming quarter...',
-      'date': '2025-04-27',
-    },
-    {
-      'title': 'Interest Rates to Increase Soon',
-      'description': 'The Federal Reserve has hinted at an upcoming interest rate hike...',
-      'date': '2025-04-26',
-    },
-    {
-      'title': 'Unemployment Rate Drops Again',
-      'description': 'The unemployment rate has decreased for the second consecutive month...',
-      'date': '2025-04-25',
-    },
-  ];
+class NewsScreen extends StatefulWidget {
+  const NewsScreen({super.key});
+
+  @override
+  State<NewsScreen> createState() => _NewsScreenState();
+}
+
+class _NewsScreenState extends State<NewsScreen> {
+  // Contrôleur pour le champ de recherche
+  final TextEditingController _searchController = TextEditingController();
+
+   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+       Provider.of<NewsProvider>(context, listen: false).fetchNews();
+    });
+    // Ajoute un listener au contrôleur pour mettre à jour la recherche dans le provider
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    // Nettoie le contrôleur et retire le listener quand l'écran est supprimé
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Fonction appelée quand le texte de recherche change
+  void _onSearchChanged() {
+    // Met à jour le texte de recherche dans le provider
+    Provider.of<NewsProvider>(context, listen: false).setSearchText(_searchController.text);
+  }
+
+
+  // Fonction pour gérer le tap sur une actualité (exemple)
+  void _handleArticleTap(NewsArticle article) {
+     print("Tapped on: ${article.title}");
+     // TODO: Implement navigation to article detail screen or open URL
+     // Exemple pour ouvrir une URL (nécessite le package url_launcher)
+     // if (article.articleUrl != null) {
+     //   launchUrl(Uri.parse(article.articleUrl!));
+     // } else {
+     //   ScaffoldMessenger.of(context).showSnackBar(
+     //     const SnackBar(content: Text("No URL available for this article")),
+     //   );
+     // }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<NewsProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Actualités'),
+        title: const Text("Actualités Financières"),
+         leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: newsArticles.length,
-        itemBuilder: (context, index) {
-          final article = newsArticles[index];
-          return Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 4,
-            margin: const EdgeInsets.only(bottom: 20),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text(article['title'] ?? ''),
-                      content: Text(article['description'] ?? ''),
-                      actions: [
-                        TextButton(
-                          child: Text('Fermer'),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: ListTile(
-                  leading: Icon(Icons.article, size: 40, color: Colors.indigo),
-                  title: Text(article['title'] ?? '', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text('Date: ${article['date']}', style: TextStyle(color: Colors.grey)),
-                      const SizedBox(height: 8),
-                      Text(article['description'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
+      body: Column( // Utilise une colonne pour la barre de recherche et la liste
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Rechercher des actualités',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
             ),
-          );
-        },
+          ),
+          Expanded( // Permet à la liste de prendre l'espace restant
+            child: Center(
+              child: provider.isLoading
+                  ? const CircularProgressIndicator()
+                  : provider.errorMessage != null
+                      ? Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                             mainAxisAlignment: MainAxisAlignment.center,
+                             children: [
+                               const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                               const SizedBox(height: 10),
+                                Text(
+                                   provider.errorMessage!,
+                                   textAlign: TextAlign.center,
+                                   style: const TextStyle(color: Colors.red, fontSize: 16),
+                                 ),
+                                 const SizedBox(height: 20),
+                                 ElevatedButton(
+                                    onPressed: () => provider.fetchNews(),
+                                    child: const Text("Réessayer"),
+                                 ),
+                             ],
+                           ),
+                        )
+                      // Utilise provider.articles (la liste filtrée)
+                      : provider.articles.isEmpty && provider.searchText.isEmpty // Si liste vide et pas de recherche active
+                          ? const Text("Aucune actualité disponible pour l'instant.")
+                          : provider.articles.isEmpty && provider.searchText.isNotEmpty // Si liste vide mais recherche active
+                             ? Text("Aucun résultat pour \"${provider.searchText}\".")
+                             : RefreshIndicator(
+                                  onRefresh: () => provider.fetchNews(),
+                                  // Utilise provider.articles (la liste filtrée)
+                                  child: ListView.builder(
+                                    itemCount: provider.articles.length,
+                                    itemBuilder: (context, index) {
+                                      final article = provider.articles[index];
+                                      return NewsArticleCard(
+                                        newsArticle: article,
+                                        onTap: () => _handleArticleTap(article),
+                                      );
+                                    },
+                                  ),
+                                ),
+            ),
+          ),
+        ],
       ),
     );
   }
