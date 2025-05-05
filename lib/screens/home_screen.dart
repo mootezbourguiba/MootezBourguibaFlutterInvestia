@@ -21,17 +21,7 @@ class HomeScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/economic_calendar');
-              },
-              icon: const Icon(Icons.calendar_today),
-              label: const Text("Calendrier Économique"),
-               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50), // Largeur maximale
-              ),
-            ),
+           
             const SizedBox(height: 10),
             ElevatedButton.icon(
               onPressed: () {

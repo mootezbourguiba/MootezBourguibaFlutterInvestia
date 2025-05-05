@@ -6,12 +6,12 @@ import 'package:path_provider/path_provider.dart'; // Pour trouver le chemin de 
 
 // Importe tes écrans et providers
 import 'screens/home_screen.dart';
-import 'screens/economic_calendar_screen.dart';
+
 import 'screens/news_screen.dart';
 import 'screens/asset_list_screen.dart';
 import 'screens/asset_detail_screen.dart';
 
-import 'providers/economic_calendar_provider.dart';
+
 import 'providers/news_provider.dart';
 import 'providers/market_data_provider.dart';
 
@@ -22,7 +22,7 @@ import 'providers/market_data_provider.dart';
 
 // Importe les fichiers modèles eux-mêmes. Les Adapters sont disponibles via Hive.registerAdapter
 import 'models/news_article.dart';
-import 'models/economic_event.dart';
+
 import 'models/asset.dart';
 
 
@@ -39,7 +39,7 @@ Future<void> main() async {
   // CORRECTION : Assure-toi que ces adaptateurs sont correctement générés par build_runner
   // Les noms des adaptateurs sont générés dans les fichiers .g.dart
   Hive.registerAdapter(NewsArticleAdapter());
-  Hive.registerAdapter(EconomicEventAdapter()); // Si tu mets EconomicEvent en cache
+ // Hive.registerAdapter(EconomicEventAdapter()); // Si tu mets EconomicEvent en cache
   Hive.registerAdapter(AssetAdapter()); // Si tu mets Asset en cache
 
   // Optionnel: Ouvre les "boxes" (similaires à des tables) au démarrage ici ou dans tes services/providers
@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => EconomicCalendarProvider()),
+       // ChangeNotifierProvider(create: (context) => EconomicCalendarProvider()),
         ChangeNotifierProvider(create: (context) => NewsProvider()),
         ChangeNotifierProvider(create: (context) => MarketDataProvider()),
         // Ajoute ici les autres providers
@@ -103,7 +103,7 @@ class MyApp extends StatelessWidget {
         ),
         routes: {
           '/': (context) => const HomeScreen(),
-          '/economic_calendar': (context) => const EconomicCalendarScreen(),
+         // '/economic_calendar': (context) => const EconomicCalendarScreen(),
           '/news': (context) => const NewsScreen(),
           '/asset_list': (context) => const AssetListScreen(),
           // Route pour le détail d'un actif, nécessite de passer l'ID en argument
